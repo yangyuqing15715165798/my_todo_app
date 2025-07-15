@@ -2,6 +2,9 @@
 
 这是一个简单的全栈Todo应用，包含前端、后端和MySQL数据库。
 
+<img width="1153" height="836" alt="image" src="https://github.com/user-attachments/assets/f0467580-f4e3-4ab6-bebc-e2b2c870eec0" />
+
+
 ## 项目结构
 
 ```
