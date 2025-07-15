@@ -1,0 +1,10 @@
+{
+  "name": "todo-frontend",
+  "version": "1.0.0",
+  "description": "Todo应用前端",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server --port=3000",
+    "build": "echo 'Build complete'"
+  }
+}

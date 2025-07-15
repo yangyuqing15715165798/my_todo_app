@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的待办事项</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .add-todo {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .todo-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .todo-input:focus {
+            border-color: #667eea;
+        }
+
+        .add-btn {
+            padding: 15px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .add-btn:hover {
+            background: #5a67d8;
+        }
+
+        .add-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .todos-list {
+            padding: 20px 30px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .todo-item {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .todo-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .todo-item.completed {
+            background: #e8f5e8;
+            opacity: 0.7;
+        }
+
+        .todo-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .todo-text {
+            font-size: 16px;
+            color: #333;
+            transition: color 0.3s;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .delete-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .delete-btn:hover {
+            background: #c53030;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .todo-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .todo-actions {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 我的待办事项</h1>
+            <p>简单高效的任务管理工具</p>
+        </div>
+
+        <div class="add-todo">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    class="todo-input" 
+                    id="todoInput" 
+                    placeholder="输入新的待办事项..."
+                    maxlength="100"
+                >
+                <button class="add-btn" id="addBtn" onclick="addTodo()">
+                    添加
+                </button>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        
+        <div class="todos-list" id="todosList">
+            <div class="loading">
+                🔄 正在加载待办事项...
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            总计: 0 个任务
+        </div>
+    </div>
+
+    <script>
+        // API基础地址配置
+        const API_BASE_URL = 'http://localhost:5000';
+
+        let todos = [];
+
+        // 页面加载时获取所有待办事项
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchTodos();
+            setupEnterKeyHandler();
+        });
+
+        // 设置回车键添加待办事项
+        function setupEnterKeyHandler() {
+            const input = document.getElementById('todoInput');
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTodo();
+                }
+            });
+        }
+
+        // 获取所有待办事项
+        async function fetchTodos() {
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE_URL}/api/todos`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    todos = result.data;
+                    renderTodos();
+                    updateStats();
+                } else {
+                    showError('获取待办事项失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('获取待办事项失败:', error);
+                showError('网络连接失败，请检查后端服务是否正常运行');
+            }
+        }
+
+        // 添加新的待办事项
+        async function addTodo() {
+            const input = document.getElementById('todoInput');
+            const text = input.value.trim();
+            
+            if (!text) {
+                showError('请输入待办事项内容');
+                return;
+            }
+
+            const addBtn = document.getElementById('addBtn');
+            addBtn.disabled = true;
+            addBtn.textContent = '添加中...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/todos`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    input.value = '';
+                    hideError();
+                    await fetchTodos(); // 重新获取列表
+                } else {
+                    showError('添加失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('添加失败:', error);
+                showError('添加失败，请重试');
+            } finally {
+                addBtn.disabled = false;
+                addBtn.textContent = '添加';
+            }
+        }
+
+        // 切换待办事项完成状态
+        async function toggleTodo(id, completed) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ completed })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    await fetchTodos(); // 重新获取列表
+                } else {
+                    showError('更新失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('更新失败:', error);
+                showError('更新失败，请重试');
+            }
+        }
+
+        // 删除待办事项
+        async function deleteTodo(id) {
+            if (!confirm('确定要删除这个待办事项吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    await fetchTodos(); // 重新获取列表
+                } else {
+                    showError('删除失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                showError('删除失败，请重试');
+            }
+        }
+
+        // 渲染待办事项列表
+        function renderTodos() {
+            const todosList = document.getElementById('todosList');
+            
+            if (todos.length === 0) {
+                todosList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>🎉 太棒了！</h3>
+                        <p>你暂时没有待办事项<br>添加一个新任务开始吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const todosHtml = todos.map(todo => `
+                <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                    <div class="todo-content">
+                        <input 
+                            type="checkbox" 
+                            class="todo-checkbox"
+                            ${todo.completed ? 'checked' : ''}
+                            onchange="toggleTodo('${todo.id}', this.checked)"
+                        >
+                        <span class="todo-text">${escapeHtml(todo.text)}</span>
+                    </div>
+                    <div class="todo-actions">
+                        <button class="delete-btn" onclick="deleteTodo('${todo.id}')">
+                            🗑️ 删除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            todosList.innerHTML = todosHtml;
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const total = todos.length;
+            const completed = todos.filter(todo => todo.completed).length;
+            const pending = total - completed;
+            
+            const statsElement = document.getElementById('stats');
+            statsElement.innerHTML = `
+                总计: ${total} 个任务 | 
+                已完成: ${completed} 个 | 
+                待完成: ${pending} 个
+            `;
+        }
+
+        // 显示加载状态
+        function showLoading() {
+            const todosList = document.getElementById('todosList');
+            todosList.innerHTML = `
+                <div class="loading">
+                    🔄 正在加载待办事项...
+                </div>
+            `;
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            
+            // 3秒后自动隐藏错误信息
+            setTimeout(() => {
+                hideError();
+            }, 3000);
+        }
+
+        // 隐藏错误信息
+        function hideError() {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.style.display = 'none';
+        }
+
+        // HTML转义函数，防止XSS攻击
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 定期检查服务器状态
+        setInterval(async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/health`);
+                if (!response.ok) {
+                    console.warn('服务器连接异常');
+                }
+            } catch (error) {
+                console.warn('无法连接到服务器');
+            }
+        }, 30000); // 30秒检查一次
+    </script>
+</body>
+</html>

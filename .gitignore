@@ -1,0 +1,23 @@
+# 忽略依赖文件
+node_modules/
+
+# 忽略环境变量文件
+.env
+
+# 忽略日志文件
+*.log
+logs/
+
+# 忽略IDE配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 忽略操作系统文件
+.DS_Store
+Thumbs.db
+
+# 忽略构建文件
+dist/
+build/
